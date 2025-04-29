@@ -26,11 +26,59 @@ struct DraggableText: View {
     @Binding var angle:  Angle    // .zero
     var onDelete: (() -> Void)? = nil
 
+    // Customization properties
+    var useGradient:    Bool    = false
+    var gradientStart:  Color   = .white
+    var gradientEnd:    Color   = .white
+    var shadowEnabled:  Bool    = false
+    var shadowColor:    Color   = .black
+    var shadowRadius:   CGFloat = 3
+    var shadowX:        CGFloat = 0
+    var shadowY:        CGFloat = 0
+
+    /// Explicit memberwise initializer including customization parameters
+    init(
+        text: String,
+        font: Font,
+        color: Color,
+        isSelected: Bool,
+        offset: Binding<CGSize>,
+        scale: Binding<CGFloat>,
+        angle: Binding<Angle>,
+        onDelete: (() -> Void)? = nil,
+        useGradient: Bool = false,
+        gradientStart: Color = .white,
+        gradientEnd: Color = .white,
+        shadowEnabled: Bool = false,
+        shadowColor: Color = .black,
+        shadowRadius: CGFloat = 3,
+        shadowX: CGFloat = 0,
+        shadowY: CGFloat = 0
+    ) {
+        self.text = text
+        self.font = font
+        self.color = color
+        self.isSelected = isSelected
+        self._offset = offset
+        self._scale = scale
+        self._angle = angle
+        self.onDelete = onDelete
+        self.useGradient = useGradient
+        self.gradientStart = gradientStart
+        self.gradientEnd = gradientEnd
+        self.shadowEnabled = shadowEnabled
+        self.shadowColor = shadowColor
+        self.shadowRadius = shadowRadius
+        self.shadowX = shadowX
+        self.shadowY = shadowY
+    }
+
     // live deltas while fingers are down
     @State private var liveDrag: CGSize = .zero
     @GestureState private var pinchΔ: CGFloat = 1
     @GestureState private var rotΔ:   Angle   = .zero
     @State private var isOverTrash = false   // ← new
+    @State private var isDeleting: Bool = false
     var body: some View {
 
         // full-canvas transparent hit-area so gestures always register
@@ -46,35 +94,35 @@ struct DraggableText: View {
 
             let drag = DragGesture()
                 .onChanged { v in
-                    // keep the text under the finger
-                    let totalRot = angle + rotΔ
-                    let currentScale = scale * pinchΔ
-                    let rad = CGFloat(totalRot.radians)
-                    let tr  = v.translation
-                    liveDrag = CGSize(
-                        width:  (tr.width  * cos(rad) + tr.height * sin(rad)) / currentScale,
-                        height: (-tr.width * sin(rad) + tr.height * cos(rad)) / currentScale
-                    )
+                    // convert the gesture’s local translation into unscaled offset
+                    liveDrag = v.translation / (scale * pinchΔ)
 
-                    // live trash hit-test
-                    isOverTrash = (offset + liveDrag).height > (geo.size.height / 2 - 60)
+                    // Highlight delete when dragged above the top or below the bottom threshold
+                    let distance = (offset + liveDrag).height
+                    let threshold = geo.size.height / 2 - 60
+                    isOverTrash = abs(distance) > threshold
                 }
                 .onEnded { v in
-                    // commit the drag
-                    let rad = CGFloat(angle.radians)
-                    let tr  = v.translation
-                    let newOffset = offset + CGSize(
-                        width:  (tr.width  * cos(rad) + tr.height * sin(rad)) / scale,
-                        height: (-tr.width * sin(rad) + tr.height * cos(rad)) / scale
-                    )
+                    // commit the drag using the gesture’s local translation scaled back
+                    let newOffset = offset + (v.translation / scale)
 
                     // final trash check
-                    if newOffset.height > (geo.size.height / 2 - 60) {
-                        onDelete?()
+                    let finalDist = newOffset.height
+                    let threshold = geo.size.height / 2 - 60
+                    if abs(finalDist) > threshold {
+                        // commit position for in-place animation
+                        offset = newOffset
+                        liveDrag = .zero
+                        withAnimation(.spring()) {
+                            isDeleting = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            onDelete?()
+                        }
                     } else {
                         offset = newOffset
+                        liveDrag = .zero
                     }
-                    liveDrag   = .zero
                     isOverTrash = false
                 }
 
@@ -87,32 +135,56 @@ struct DraggableText: View {
                     .fill(Color.clear)
                     .frame(width: geo.size.width, height: geo.size.height)
 
-                ZStack(alignment: .topTrailing) {
-                    Text(text)
-                        .font(font)
-                        .foregroundColor(color)
-                        .shadow(radius: 3)
+                // Text + optional gradient fill + optional shadow
+                ZStack {
+                    if useGradient {
+                        Text(text)
+                            .font(font)
+                            .overlay(
+                                LinearGradient(
+                                    colors: [gradientStart, gradientEnd],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .mask(Text(text).font(font))
+                    } else {
+                        Text(text)
+                            .font(font)
+                            .foregroundColor(color)
+                    }
                 }
+                .shadow(
+                    color: shadowEnabled ? shadowColor : .clear,
+                    radius: shadowRadius,
+                    x: shadowX,
+                    y: shadowY
+                )
                 .if(isSelected) { view in
                     view.overlay(
                         RoundedRectangle(cornerRadius: 4)
                             .inset(by: -8)
-                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                            .stroke(style: StrokeStyle(lineWidth: 3, dash: [5]))
                             .foregroundColor(.black)
                     )
                 }
-                .scaleEffect(scale * pinchΔ)
                 .rotationEffect(angle + rotΔ, anchor: .center)
+                .scaleEffect((scale * pinchΔ) * (isDeleting ? 0.01 : 1), anchor: .center)
                 .offset(offset + liveDrag)
-                .gesture(combo)
+                .gesture(isSelected ? combo : nil)
 
-                // Trash bin icon at the bottom
-                Image(systemName: "trash")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .foregroundColor(isOverTrash ? .red : .gray)
-                    .offset(y: geo.size.height / 2 - 60)
+                // Trash bin icon at the top (only when selected & dragging)
+                if isSelected && liveDrag != .zero {
+                    Image(systemName: "trash")
+                        .font(.title)
+                        .bold()
+                        .padding(18)
+                        .background(isOverTrash ? .red.opacity(0.4) : .clear)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .shadow(radius: 2)
+                        .foregroundColor(isOverTrash ? .red : .primary)
+                        .offset(y: -(geo.size.height / 2 - 60))
+                }
             }
         }
         .contentShape(Rectangle())
