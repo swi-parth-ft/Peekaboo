@@ -1,6 +1,5 @@
 import SwiftUI
 import CoreGraphics   // sin / cos
-
 // add two CGSize values
 private extension CGSize {
     static func + (lhs: CGSize, rhs: CGSize) -> CGSize {
@@ -24,6 +23,7 @@ struct DraggableText: View {
     @Binding var offset: CGSize   // .zero
     @Binding var scale:  CGFloat  // 1
     @Binding var angle:  Angle    // .zero
+    
     var onDelete: (() -> Void)? = nil
 
     // Customization properties
@@ -35,6 +35,18 @@ struct DraggableText: View {
     var shadowRadius:   CGFloat = 3
     var shadowX:        CGFloat = 0
     var shadowY:        CGFloat = 0
+    var bend: CGFloat = 0
+    var textSize: CGFloat = 16
+    var stroke: Bool = false
+    var strokeColor: Color = .black
+    var strokeWidth: CGFloat = 1
+    var background: Bool = false
+    var backgroundColor: Color = .clear
+    var gradientX: UnitPoint = .leading
+    var gradientY: UnitPoint = .trailing
+    var bold: Bool = false
+    var italic: Bool = false
+    var underline: Bool = false
 
     /// Explicit memberwise initializer including customization parameters
     init(
@@ -53,7 +65,20 @@ struct DraggableText: View {
         shadowColor: Color = .black,
         shadowRadius: CGFloat = 3,
         shadowX: CGFloat = 0,
-        shadowY: CGFloat = 0
+        shadowY: CGFloat = 0,
+        bend: CGFloat = 0,
+        textSize: CGFloat = 16,
+        stroke: Bool = false,
+        strokeColor: Color = .black,
+        strokeWidth: CGFloat = 1,
+        background: Bool = false,
+        backgroundColor: Color = .clear,
+        gradientX: UnitPoint = .leading,
+        gradientY: UnitPoint = .trailing,
+        bold: Bool = false,
+        italic: Bool = false,
+        underline: Bool = false
+        
     ) {
         self.text = text
         self.font = font
@@ -71,6 +96,18 @@ struct DraggableText: View {
         self.shadowRadius = shadowRadius
         self.shadowX = shadowX
         self.shadowY = shadowY
+        self.bend = bend
+        self.textSize = textSize
+        self.stroke = stroke
+        self.strokeColor = strokeColor
+        self.strokeWidth = strokeWidth
+        self.background = background
+        self.backgroundColor = backgroundColor
+        self.gradientX = gradientX
+        self.gradientY = gradientY
+        self.bold = bold
+        self.italic = italic
+        self.underline = underline
     }
 
     // live deltas while fingers are down
@@ -135,43 +172,54 @@ struct DraggableText: View {
                     .fill(Color.clear)
                     .frame(width: geo.size.width, height: geo.size.height)
 
-                // Text + optional gradient fill + optional shadow
-                ZStack {
-                    if useGradient {
-                        Text(text)
-                            .font(font)
-                            .overlay(
-                                LinearGradient(
-                                    colors: [gradientStart, gradientEnd],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .mask(Text(text).font(font))
-                    } else {
-                        Text(text)
-                            .font(font)
-                            .foregroundColor(color)
+                // Build the styled text view (no transforms or gesture)
+                Text(text)
+                    .font(font)
+                    .if(bold) { $0.bold() }
+                    .if(italic) { $0.italic() }
+                    .underline(underline, color: color)
+                    .if(stroke) { view in
+                        view.glowBorder(color: strokeColor, lineWidth: Int(strokeWidth))
                     }
-                }
-                .shadow(
-                    color: shadowEnabled ? shadowColor : .clear,
-                    radius: shadowRadius,
-                    x: shadowX,
-                    y: shadowY
-                )
-                .if(isSelected) { view in
-                    view.overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .inset(by: -8)
-                            .stroke(style: StrokeStyle(lineWidth: 3, dash: [5]))
-                            .foregroundColor(.black)
+                    .if(background) { view in
+                        view.background(RoundedRectangle(cornerRadius: 4).fill(backgroundColor))
+                    }
+                    .if(useGradient) { view in
+                        view.foregroundStyle(
+                            LinearGradient(
+                                colors: [gradientStart, gradientEnd],
+                                startPoint: gradientX,
+                                endPoint: gradientY
+                            )
+                        )
+                    }
+                    .if(!useGradient) { view in view.foregroundStyle(color) }
+                    .shadow(
+                        color: shadowEnabled ? shadowColor : .clear,
+                        radius: shadowRadius,
+                        x: shadowX,
+                        y: shadowY
                     )
-                }
-                .rotationEffect(angle + rotΔ, anchor: .center)
-                .scaleEffect((scale * pinchΔ) * (isDeleting ? 0.01 : 1), anchor: .center)
-                .offset(offset + liveDrag)
-                .gesture(isSelected ? combo : nil)
+                    .if(stroke) { view in
+                        view
+                            .customeStrok(color: strokeColor, width: strokeWidth)
+                    }
+                    .modifier(BendEffect(bend: bend))
+                    .if(isSelected) { view in
+                        view.overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .inset(by: -8)
+                                .stroke(style: StrokeStyle(lineWidth: 3, dash: [5]))
+                                .foregroundColor(.black)
+                        )
+                    }
+
+                // Apply transforms and gesture separately
+              
+                    .rotationEffect(angle + rotΔ, anchor: .center)
+                    .scaleEffect((scale * pinchΔ) * (isDeleting ? 0.01 : 1), anchor: .center)
+                    .offset(offset + liveDrag)
+                    .gesture(isSelected ? combo : nil)
 
                 // Trash bin icon at the top (only when selected & dragging)
                 if isSelected && liveDrag != .zero {
@@ -205,3 +253,40 @@ extension View {
         }
     }
 }
+
+struct StrokeModifier: ViewModifier {
+    var strokeSize: CGFloat = 1
+    var strokeColor: Color = .blue
+
+    func body(content: Content) -> some View {
+        content
+            .padding(strokeSize)
+            .background(
+                Rectangle()
+                    .foregroundStyle(strokeColor)
+                    .mask(outline(context: content))
+            )
+    }
+
+    private func outline(context: Content) -> some View {
+        Canvas { context, size in
+            context.addFilter(.alphaThreshold(min: 0.01))
+            context.drawLayer { layer in
+                if let text = context.resolveSymbol(id: UUID()) {
+                    layer.draw(text, at: CGPoint(x: size.width / 2, y: size.height / 2))
+                }
+            }
+        } symbols: {
+            context.tag(UUID()).blur(radius: strokeSize)
+        }
+    }
+}
+
+extension View {
+    func customeStrok(color: Color, width: CGFloat) -> some View {
+        self.modifier(StrokeModifier(strokeSize: width, strokeColor: color))
+    }
+}
+
+/// GeometryEffect for simple text bending
+

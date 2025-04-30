@@ -35,6 +35,7 @@ private func clampedOffset(for newValue: CGSize, in geoSize: CGSize, background:
     return CGSize(width: clampedX, height: clampedY)
 }
 import SwiftUI
+import PencilKit
 import PhotosUI
 import Photos
 import UIKit
@@ -77,13 +78,25 @@ struct TextItem: Identifiable, Equatable {
     // New customization
     var fontName: String = "System"
     var useGradient: Bool = false
-    var gradientStart: Color = .white
-    var gradientEnd:   Color = .white
+    var gradientStart: Color = .orange
+    var gradientEnd:   Color = .yellow
     var shadowEnabled: Bool = false
     var shadowColor:   Color = .black
     var shadowRadius:  CGFloat = 3
     var shadowX:       CGFloat = 0
     var shadowY:       CGFloat = 0
+    var bend: CGFloat = 0
+    var textSize: CGFloat = 36
+    var stroke: Bool = true
+    var strokeColor: Color = .clear
+    var strokeWidth: CGFloat = 1
+    var background: Bool = false
+    var backgroundColor: Color = .clear
+    var gradientX: UnitPoint = .leading
+    var gradientY: UnitPoint = .trailing
+    var bold: Bool = false
+    var italic: Bool = false
+    var underline: Bool = false
 }
 
 struct PhotoEditorView: View {
@@ -92,6 +105,11 @@ struct PhotoEditorView: View {
 
 // Show/hide controls for selected text
 @State private var showingControls: Bool = false
+@State private var subjectAboveText: Bool = false
+
+// Drawing state
+@State private var drawingEnabled: Bool = false
+@State private var drawing: PKDrawing = PKDrawing()
 
 // MARK: - Text Layer View
 private struct TextLayerView: View {
@@ -121,7 +139,9 @@ private struct TextLayerView: View {
                 ForEach($texts.filter { $0.id != selectedTextID }) { $textItem in
                     DraggableText(
                         text: textItem.text,
-                        font: .system(size: 48, weight: textItem.isBold ? .bold : .regular),
+                        font: textItem.fontName == "System"
+                            ? Font.system(size: textItem.textSize)
+                            : Font.custom(textItem.fontName, size: textItem.textSize),
                         color: textItem.color,
                         isSelected: false,
                         offset: Binding(
@@ -140,7 +160,19 @@ private struct TextLayerView: View {
                         shadowColor:    textItem.shadowColor,
                         shadowRadius:   textItem.shadowRadius,
                         shadowX:        textItem.shadowX,
-                        shadowY:        textItem.shadowY
+                        shadowY:        textItem.shadowY,
+                        bend:           textItem.bend,
+                        textSize: textItem.textSize,
+                        stroke: textItem.stroke,
+                        strokeColor: textItem.strokeColor,
+                        strokeWidth: textItem.strokeWidth,
+                        background: textItem.background,
+                        backgroundColor: textItem.backgroundColor,
+                        gradientX: textItem.gradientX,
+                        gradientY: textItem.gradientY,
+                        bold: textItem.bold,
+                        italic: textItem.italic,
+                        underline: textItem.underline
                     )
                     .frame(width: geo.size.width, height: geo.size.height)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
@@ -152,7 +184,10 @@ private struct TextLayerView: View {
 
                     DraggableText(
                         text: selectedItem.wrappedValue.text,
-                        font: .system(size: 48, weight: selectedItem.wrappedValue.isBold ? .bold : .regular),
+                        font: selectedItem.wrappedValue.fontName == "System"
+                            ? Font.system(size: selectedItem.wrappedValue.textSize)
+                            : Font.custom(selectedItem.wrappedValue.fontName,
+                                          size: selectedItem.wrappedValue.textSize),
                         color: selectedItem.wrappedValue.color,
                         isSelected: true,
                         offset: Binding(
@@ -167,6 +202,7 @@ private struct TextLayerView: View {
                             if let idx = texts.firstIndex(where: { $0.id == selectedID }) {
                                 texts.remove(at: idx)
                                 selectedTextID = nil
+                              
                             }
                         },
                         useGradient:    selectedItem.wrappedValue.useGradient,
@@ -176,7 +212,19 @@ private struct TextLayerView: View {
                         shadowColor:    selectedItem.wrappedValue.shadowColor,
                         shadowRadius:   selectedItem.wrappedValue.shadowRadius,
                         shadowX:        selectedItem.wrappedValue.shadowX,
-                        shadowY:        selectedItem.wrappedValue.shadowY
+                        shadowY:        selectedItem.wrappedValue.shadowY,
+                        bend:           selectedItem.wrappedValue.bend,
+                        textSize: selectedItem.wrappedValue.textSize,
+                        stroke: selectedItem.wrappedValue.stroke,
+                        strokeColor: selectedItem.wrappedValue.strokeColor,
+                        strokeWidth: selectedItem.wrappedValue.strokeWidth,
+                        background: selectedItem.wrappedValue.background,
+                        backgroundColor: selectedItem.wrappedValue.backgroundColor,
+                        gradientX: selectedItem.wrappedValue.gradientX,
+                        gradientY: selectedItem.wrappedValue.gradientY,
+                        bold: selectedItem.wrappedValue.bold,
+                        italic: selectedItem.wrappedValue.italic,
+                        underline: selectedItem.wrappedValue.underline
                     )
                     .frame(width: geo.size.width, height: geo.size.height)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
@@ -226,16 +274,18 @@ private struct TextLayerView: View {
 @State private var texts: [TextItem] = [
     TextItem(text: "Your text", isBold: true, color: .white, offset: .zero, scale: 1, angle: .zero)
 ]
+  
 @State private var selectedTextID: UUID? = nil
 
 // Convenience
-private func font(for textItem: TextItem) -> Font {
-    if textItem.fontName == "System" {
-        return .system(size: 48, weight: textItem.isBold ? .bold : .regular)
-    } else {
-        return .custom(textItem.fontName, size: 48)
+    /// In PhotoEditorView.swift
+    private func font(for name: String, size: CGFloat) -> Font {
+      if name == "System" {
+        return .system(size: size)
+      } else {
+        return .custom(name, size: size)
+      }
     }
-}
 
 private var selectedTextIndex: Int? {
     guard let id = selectedTextID else { return nil }
@@ -299,66 +349,117 @@ var body: some View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.bottom, 100)
         // Bottom toolbar
-     //   if background != nil {
+        if background != nil {
             VStack {
                 Spacer()
-                HStack {
-                    // Spacer()
-                    Button {
-                        // add & select new text
-                        let newItem = TextItem(text: "New text",
-                                               isBold: false,
-                                               color: .white,
-                                               offset: .zero,
-                                               scale: 1,
-                                               angle: .zero)
-                        texts.append(newItem)
-                        selectedTextID = newItem.id
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.title)
-                            .bold()
-                            .padding(18)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .shadow(radius: 2)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    if selectedTextIndex != nil {
-                        if !showingControls {
+                
+                
+                if !drawingEnabled {
+                    HStack {
+                        // Draw mode toggle
+                        
+                        // Spacer()
+                        Button {
+                            // add & select new text
+                            let newItem = TextItem(text: "New text",
+                                                   isBold: false,
+                                                   color: .white,
+                                                   offset: .zero,
+                                                   scale: 1,
+                                                   angle: .zero)
+                            texts.append(newItem)
+                            selectedTextID = newItem.id
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.title)
+                                .bold()
+                                .padding(18)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .shadow(radius: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        // Only show pencil when there is at least one text, one is selected, and controls are hidden
+                        
+                        Button {
+                            drawingEnabled.toggle()
+                        } label: {
+                            Image(systemName: "scribble")
+                                .foregroundStyle(
+                                    LinearGradient(colors: [.yellow, .orange], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                )
+                                .font(.title)
+                                .padding(18)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .shadow(radius: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        
+                        if !texts.isEmpty, selectedTextIndex != nil, !showingControls {
                             Button {
                                 showingControls = true
                             } label: {
                                 Image(systemName: "pencil")
                                     .font(.title)
                                     .bold()
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(
+                                        LinearGradient(colors: [.green, .mint], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    )
                                     .padding(18)
                                     .background(.ultraThinMaterial, in: Circle())
                                     .shadow(radius: 2)
                             }
                         }
+                        
+                        if !texts.isEmpty {
+                            Button {
+                                subjectAboveText.toggle()
+                            } label: {
+                                Image(systemName: subjectAboveText ? "square.3.layers.3d.top.filled" : "square.3.layers.3d.middle.filled")
+                                    .font(.title)
+                                    .foregroundStyle(
+                                        LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    )
+                                    .padding(18)
+                                    .background(.ultraThinMaterial, in: Circle())
+                                    .shadow(radius: 2)
+                            }
+                        }
+                        
+                        Spacer()
+                        Button {
+                            exportImage()
+                        } label: {
+                            Image(systemName: "square.and.arrow.down.fill")
+                                .font(.title)
+                                .bold()
+                                .padding(18)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .shadow(radius: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    Spacer()
-                    Button {
-                        exportImage()
-                    } label: {
-                        Image(systemName: "square.and.arrow.down.fill")
-                            .font(.title)
-                            .bold()
-                            .padding(18)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .shadow(radius: 2)
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    .padding()
+
                 }
-                .padding()
             }
-      //  }
+        }
     }
-    .sheet(isPresented: $showingControls) {
-        controlBar
-            .presentationBackground(.ultraThinMaterial)
+    .fullScreenCover(isPresented: $showingControls) {
+        TextControlsView(
+            texts: $texts,
+            selectedTextID: $selectedTextID,
+            showingControls: $showingControls,
+            background: background,
+            exportAction: exportImage
+        )
+//        .presentationDetents([.fraction(0.6)])
+//        .presentationDragIndicator(.visible)
     }
+//    .sheet(isPresented: $showingControls) {
+//        controlBar
+//            .presentationBackground(.ultraThinMaterial)
+//    }
     .navigationTitle("Peekaboo")
     .toolbar {
         if background != nil {
@@ -390,17 +491,81 @@ private var canvas: some View {
                 )
                 .shadow(radius: 20)
                 .allowsHitTesting(false)
+            // Drawing layer (only when drawingEnabled)
+            
+        }
+        if subjectAboveText {
+            if let fg = subject {
+                Image(uiImage: fg)
+                    .resizable()
+                    .scaledToFit()
+                    .allowsHitTesting(!drawingEnabled)
+            }
+            if background != nil {
+                TextLayerView(texts: $texts, selectedTextID: $selectedTextID, background: background)
+            }
+
+            DrawingCanvasView(
+                drawing: $drawing,
+                toolPickerVisible: .constant(drawingEnabled)
+            )
+            .frame(width: previewImageSize.width, height: previewImageSize.height)
+            .allowsHitTesting(drawingEnabled)
+            .zIndex(0)
+
+        } else {
+            if background != nil {
+                TextLayerView(texts: $texts, selectedTextID: $selectedTextID, background: background)
+            }
+            DrawingCanvasView(
+                drawing: $drawing,
+                toolPickerVisible: .constant(drawingEnabled)
+            )
+            .frame(width: previewImageSize.width, height: previewImageSize.height)
+            .allowsHitTesting(drawingEnabled)
+            .zIndex(0)
+
+            if let fg = subject {
+                Image(uiImage: fg)
+                    .resizable()
+                    .scaledToFit()
+                    .allowsHitTesting(false)
+            }
         }
 
-        if background != nil {
-            TextLayerView(texts: $texts, selectedTextID: $selectedTextID, background: background)
-        }
+        // Drawing canvas always in the view hierarchy,
+        // interactive only when drawingEnabled == true
+       
+        // Overlay controls when in draw mode
+        if drawingEnabled {
+            VStack {
+                HStack(spacing: 12) {
+                    Spacer()
+                    // Done button
+                    Button("Done") {
+                        drawingEnabled = false
+                    }
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                    .font(.headline)
+                    .padding(12)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .shadow(radius: 2)
 
-        if let fg = subject {
-            Image(uiImage: fg)
-                .resizable()
-                .scaledToFit()
-                .allowsHitTesting(false)
+                    // Delete button
+                    Button("Delete") {
+                        drawing = PKDrawing()
+                    }
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                    .font(.headline)
+                    .padding(12)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .shadow(radius: 2)
+                }
+                .padding()
+                Spacer()
+            }
+            .allowsHitTesting(true)
+            .zIndex(1)
         }
     }
     .frame(maxHeight: .infinity)
@@ -562,23 +727,47 @@ private func exportImage() {
     // Ensure we have something to render
     guard background != nil else { return }
 
-    // Build the exact view we want to snapshot
-    // Build the exact view to snapshot: no text selected (hides dashed border)
+    // Render the drawing over the full canvas area (matching previewImageSize)
+    let fullCanvasRect = CGRect(origin: .zero, size: previewImageSize)
+    let drawingImage = drawing.image(from: fullCanvasRect, scale: 1)
+
+    // Build the exact view we want to snapshot: no text selected (hides dashed border)
     let exportView = ZStack {
         if let bg = background {
             Image(uiImage: bg)
                 .resizable()
                 .scaledToFit()
+                .frame(width: previewImageSize.width, height: previewImageSize.height)
         }
-        TextLayerView(
-            texts: $texts,
-            selectedTextID: .constant(nil),
-            background: background
-        )
-        if let fg = subject {
-            Image(uiImage: fg)
-                .resizable()
-                .scaledToFit()
+        // Include drawing strokes in the export
+        Image(uiImage: drawingImage)
+            .resizable()
+            .scaledToFit()
+            .frame(width: previewImageSize.width, height: previewImageSize.height)
+        if subjectAboveText {
+            if let fg = subject {
+                Image(uiImage: fg)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: previewImageSize.width, height: previewImageSize.height)
+            }
+            TextLayerView(
+                texts: $texts,
+                selectedTextID: .constant(nil),
+                background: background
+            )
+        } else {
+            TextLayerView(
+                texts: $texts,
+                selectedTextID: .constant(nil),
+                background: background
+            )
+            if let fg = subject {
+                Image(uiImage: fg)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: previewImageSize.width, height: previewImageSize.height)
+            }
         }
     }
     .frame(
@@ -586,7 +775,6 @@ private func exportImage() {
         height: previewImageSize.height
     )
     .background(Color.clear)
-    
 
     // Use SwiftUI's ImageRenderer to capture it
     let renderer = ImageRenderer(content: exportView)
@@ -615,4 +803,22 @@ NavigationStack {
     PhotoEditorView()
 }
 }
+
+/// A simple warp effect: applies a vertical shear based on `bend`
+struct BendEffect: GeometryEffect {
+    var bend: CGFloat     // –1…1
+    var animatableData: CGFloat {
+        get { bend }
+        set { bend = newValue }
+    }
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        // Map bend to a vertical shear factor
+        let shear = tan(bend * .pi/8)     // adjust π/8 for strength
+        let transform = CGAffineTransform(a: 1, b: 0,
+                                          c: shear, d: 1,
+                                          tx: 0, ty: 0)
+        return ProjectionTransform(transform)
+    }
+}
+
 
