@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreGraphics   // sin / cos
 // add two CGSize values
+
 private extension CGSize {
     static func + (lhs: CGSize, rhs: CGSize) -> CGSize {
         .init(width: lhs.width + rhs.width,
@@ -47,6 +48,7 @@ struct DraggableText: View {
     var bold: Bool = false
     var italic: Bool = false
     var underline: Bool = false
+    var rotation3D: Double = 0
 
     /// Explicit memberwise initializer including customization parameters
     init(
@@ -77,7 +79,8 @@ struct DraggableText: View {
         gradientY: UnitPoint = .trailing,
         bold: Bool = false,
         italic: Bool = false,
-        underline: Bool = false
+        underline: Bool = false,
+        rotation3D: Double = 0
         
     ) {
         self.text = text
@@ -108,6 +111,7 @@ struct DraggableText: View {
         self.bold = bold
         self.italic = italic
         self.underline = underline
+        self.rotation3D = rotation3D
     }
 
     // live deltas while fingers are down
@@ -137,7 +141,7 @@ struct DraggableText: View {
                     // Highlight delete when dragged above the top or below the bottom threshold
                     let distance = (offset + liveDrag).height
                     let threshold = geo.size.height / 2 - 60
-                    isOverTrash = abs(distance) > threshold
+                    isOverTrash = distance < -threshold
                 }
                 .onEnded { v in
                     // commit the drag using the gesture’s local translation scaled back
@@ -146,7 +150,7 @@ struct DraggableText: View {
                     // final trash check
                     let finalDist = newOffset.height
                     let threshold = geo.size.height / 2 - 60
-                    if abs(finalDist) > threshold {
+                    if finalDist < -threshold {
                         // commit position for in-place animation
                         offset = newOffset
                         liveDrag = .zero
@@ -177,6 +181,7 @@ struct DraggableText: View {
                     .font(font)
                     .if(bold) { $0.bold() }
                     .if(italic) { $0.italic() }
+                    .rotation3DEffect(Angle(degrees: rotation3D), axis: (x: 0, y: 1, z: 0))
                     .underline(underline, color: color)
                     .if(stroke) { view in
                         view.glowBorder(color: strokeColor, lineWidth: Int(strokeWidth))
@@ -224,14 +229,19 @@ struct DraggableText: View {
                 // Trash bin icon at the top (only when selected & dragging)
                 if isSelected && liveDrag != .zero {
                     Image(systemName: "trash")
-                        .font(.title)
+                    
+                        .frame(width: 24, height: 24)
                         .bold()
-                        .padding(18)
+                        .padding()
+                       
+                      
                         .background(isOverTrash ? .red.opacity(0.4) : .clear)
                         .background(.ultraThinMaterial, in: Circle())
                         .shadow(radius: 2)
                         .foregroundColor(isOverTrash ? .red : .primary)
                         .offset(y: -(geo.size.height / 2 - 60))
+                    
+                    
                 }
             }
         }

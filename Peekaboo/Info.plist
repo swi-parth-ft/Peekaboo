@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Nunito.ttf</string>
+		<string>Amatic.ttf</string>
+		<string>Bangers.ttf</string>
+		<string>Caveat.ttf</string>
+		<string>Chewy.ttf</string>
+		<string>FingerPaint.ttf</string>
+		<string>Fredoka.ttf</string>
+		<string>Grandstander.ttf</string>
+		<string>HennyPenny.ttf</string>
+		<string>Lobster.ttf</string>
+		<string>LuckiestGuy.ttf</string>
+		<string>Monoton.ttf</string>
+		<string>Pacifico.ttf</string>
+		<string>Poppins.ttf</string>
+		<string>SourGummy.ttf</string>
+		<string>Hurricane.ttf</string>
+	</array>
+</dict>
+</plist>

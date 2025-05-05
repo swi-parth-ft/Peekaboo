@@ -1,0 +1,24 @@
+{
+  "originHash" : "c0d94c62c517d46c59c8bc7bf68da7e0e6773a28b45ae89e8ea67d9250a245af",
+  "pins" : [
+    {
+      "identity" : "drops",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/omaralbeik/Drops.git",
+      "state" : {
+        "revision" : "a183ee6f79f21c940092a19c2cba756555422371",
+        "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios",
+      "state" : {
+        "revision" : "f45bccdad1c7b5f57af3fb511f67854cacd13fd7",
+        "version" : "5.22.2"
+      }
+    }
+  ],
+  "version" : 3
+}

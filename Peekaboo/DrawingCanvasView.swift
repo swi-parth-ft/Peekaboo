@@ -57,7 +57,9 @@ struct DrawingCanvasView: UIViewRepresentable {
             self.drawing = drawing
         }
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            drawing.wrappedValue = canvasView.drawing
+            DispatchQueue.main.async {
+                self.drawing.wrappedValue = canvasView.drawing
+            }
         }
     }
 }

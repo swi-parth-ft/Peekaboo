@@ -6,13 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		087786FA2DC6621D009080DB /* Drops in Frameworks */ = {isa = PBXBuildFile; productRef = 087786F92DC6621D009080DB /* Drops */; };
+		087786FD2DC66241009080DB /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 087786FC2DC66241009080DB /* ReceiptParser */; };
+		087786FF2DC66241009080DB /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 087786FE2DC66241009080DB /* RevenueCat */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		087785872DBEABA0009080DB /* Peekaboo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peekaboo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		087785872DBEABA0009080DB /* Peekaboo..app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peekaboo..app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		087786312DC3FE5A009080DB /* Exceptions for "Peekaboo" folder in "Peekaboo." target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 087785862DBEABA0009080DB /* Peekaboo. */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		087785892DBEABA0009080DB /* Peekaboo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				087786312DC3FE5A009080DB /* Exceptions for "Peekaboo" folder in "Peekaboo." target */,
+			);
 			path = Peekaboo;
 			sourceTree = "<group>";
 		};
@@ -23,6 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				087786FD2DC66241009080DB /* ReceiptParser in Frameworks */,
+				087786FA2DC6621D009080DB /* Drops in Frameworks */,
+				087786FF2DC66241009080DB /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -40,7 +62,7 @@
 		087785882DBEABA0009080DB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				087785872DBEABA0009080DB /* Peekaboo.app */,
+				087785872DBEABA0009080DB /* Peekaboo..app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +70,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		087785862DBEABA0009080DB /* Peekaboo */ = {
+		087785862DBEABA0009080DB /* Peekaboo. */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 087785932DBEABA2009080DB /* Build configuration list for PBXNativeTarget "Peekaboo" */;
+			buildConfigurationList = 087785932DBEABA2009080DB /* Build configuration list for PBXNativeTarget "Peekaboo." */;
 			buildPhases = (
 				087785832DBEABA0009080DB /* Sources */,
 				087785842DBEABA0009080DB /* Frameworks */,
@@ -63,11 +85,14 @@
 			fileSystemSynchronizedGroups = (
 				087785892DBEABA0009080DB /* Peekaboo */,
 			);
-			name = Peekaboo;
+			name = Peekaboo.;
 			packageProductDependencies = (
+				087786F92DC6621D009080DB /* Drops */,
+				087786FC2DC66241009080DB /* ReceiptParser */,
+				087786FE2DC66241009080DB /* RevenueCat */,
 			);
 			productName = Peekaboo;
-			productReference = 087785872DBEABA0009080DB /* Peekaboo.app */;
+			productReference = 087785872DBEABA0009080DB /* Peekaboo..app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +110,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 087785822DBEABA0009080DB /* Build configuration list for PBXProject "Peekaboo" */;
+			buildConfigurationList = 087785822DBEABA0009080DB /* Build configuration list for PBXProject "Peekaboo." */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -95,13 +120,15 @@
 			mainGroup = 0877857E2DBEABA0009080DB;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				087786AE2DC661B5009080DB /* XCRemoteSwiftPackageReference "Drops" */,
+				087786FB2DC66241009080DB /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 087785882DBEABA0009080DB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				087785862DBEABA0009080DB /* Peekaboo */,
+				087785862DBEABA0009080DB /* Peekaboo. */,
 			);
 		};
 /* End PBXProject section */
@@ -255,8 +282,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "we need it";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "we need it";
+				INFOPLIST_FILE = Peekaboo/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Peekaboo needs access your library to save image.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -296,8 +323,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "we need it";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "we need it";
+				INFOPLIST_FILE = Peekaboo/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Peekaboo needs access your library to save image.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -328,7 +355,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		087785822DBEABA0009080DB /* Build configuration list for PBXProject "Peekaboo" */ = {
+		087785822DBEABA0009080DB /* Build configuration list for PBXProject "Peekaboo." */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				087785912DBEABA2009080DB /* Debug */,
@@ -337,7 +364,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		087785932DBEABA2009080DB /* Build configuration list for PBXNativeTarget "Peekaboo" */ = {
+		087785932DBEABA2009080DB /* Build configuration list for PBXNativeTarget "Peekaboo." */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				087785942DBEABA2009080DB /* Debug */,
@@ -347,6 +374,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		087786AE2DC661B5009080DB /* XCRemoteSwiftPackageReference "Drops" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/omaralbeik/Drops.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.0;
+			};
+		};
+		087786FB2DC66241009080DB /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.22.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		087786F92DC6621D009080DB /* Drops */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 087786AE2DC661B5009080DB /* XCRemoteSwiftPackageReference "Drops" */;
+			productName = Drops;
+		};
+		087786FC2DC66241009080DB /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 087786FB2DC66241009080DB /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = ReceiptParser;
+		};
+		087786FE2DC66241009080DB /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 087786FB2DC66241009080DB /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0877857F2DBEABA0009080DB /* Project object */;
 }
